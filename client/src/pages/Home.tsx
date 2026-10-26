@@ -20,7 +20,10 @@ export default function Home() {
       </div>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-20 lg:py-32">
+      <section className="relative overflow-hidden py-20 lg:py-32 bg-[url('/herobg.jpg')] bg-cover bg-center bg-no-repeat">
+        {/* Dark/semi-transparent overlay to ensure text readability */}
+        <div className="absolute inset-0 bg-background/10" />
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-6">
