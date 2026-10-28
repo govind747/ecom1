@@ -1,9 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { toCartProduct } from "@shared/types";
-import { toCartProduct } from "@shared/types";
-export { toCartProduct };
-
 
 export { toCartProduct };
 

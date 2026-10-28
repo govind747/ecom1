@@ -25,7 +25,7 @@ function buildTree(rows: RawCommentRow[], likeRows: { comment_id: string; user_i
     map.set(r.id, node);
   }
 
-  for (const node of map.values()) {
+  for (const node of Array.from(map.values())) {
     if (node.parent_id && map.has(node.parent_id)) {
       map.get(node.parent_id)!.replies!.push(node);
     } else {
@@ -107,6 +107,17 @@ export function useDeleteComment() {
       queryClient.invalidateQueries({ queryKey: ["comments", variables.productId] });
     },
   });
+}
+
+export function useCurrentUserId() {
+  const { data: user } = useQuery({
+    queryKey: ["auth-user"],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      return session?.user.id ?? null;
+    },
+  });
+  return user ?? null;
 }
 
 export function useToggleCommentLike() {
