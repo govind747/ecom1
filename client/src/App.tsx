@@ -5,12 +5,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import { Navbar } from "@/components/layout/Navbar";
+import { useAuthStateSubscription } from "@/hooks/use-auth";
 
 // Pages
 import Home from "@/pages/Home";
 import Auth from "@/pages/Auth";
 import Cart from "@/pages/Cart";
 import Orders from "@/pages/Orders";
+import ProductDetail from "@/pages/ProductDetail";
 
 function Router() {
   return (
@@ -19,12 +21,14 @@ function Router() {
       <Route path="/auth" component={Auth} />
       <Route path="/cart" component={Cart} />
       <Route path="/orders" component={Orders} />
+      <Route path="/product/:id" component={ProductDetail} />
       <Route component={NotFound} />
     </Switch>
   );
 }
 
 function App() {
+  useAuthStateSubscription();
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

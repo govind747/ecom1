@@ -10,7 +10,7 @@ export default function Orders() {
   const { data: orders, isLoading: isOrdersLoading } = useOrders();
 
   if (isUserLoading) return null;
-  
+
   if (!user) {
     setLocation("/auth");
     return null;
@@ -52,18 +52,18 @@ export default function Orders() {
         ) : (
           <div className="space-y-6">
             {orders.map((order) => (
-              <div 
-                key={order.id} 
+              <div
+                key={order.id}
                 className="bg-card rounded-2xl border border-border shadow-sm p-6 flex flex-col sm:flex-row items-start sm:items-center gap-6 transition-all hover:shadow-md"
               >
                 <div className="w-20 h-20 rounded-xl overflow-hidden bg-secondary flex-shrink-0">
                   <img
-                    src={order.product.imageUrl}
+                    src={order.product.image_url}
                     alt={order.product.name}
                     className="w-full h-full object-cover mix-blend-multiply"
                   />
                 </div>
-                
+
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <h3 className="text-lg font-medium text-foreground truncate">
@@ -73,11 +73,11 @@ export default function Orders() {
                       {formatPrice(order.product.price)}
                     </span>
                   </div>
-                  
+
                   <p className="text-sm text-muted-foreground">
-                    Order #{order.razorpayOrderId?.slice(-8) || order.id} • {new Date(order.createdAt!).toLocaleDateString()}
+                    Order #{order.razorpay_order_id?.slice(-8) || order.id.slice(0, 8)} • {new Date(order.created_at).toLocaleDateString()}
                   </p>
-                  
+
                   <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary text-sm font-medium">
                     {getStatusIcon(order.status)}
                     <span>{getStatusText(order.status)}</span>

@@ -2,26 +2,25 @@ import { useProducts } from "@/hooks/use-products";
 import { ProductCard } from "@/components/ui/ProductCard";
 import { ArrowRight, Loader2, Star, Zap, Flame } from "lucide-react";
 import { Link } from "wouter";
+import { toCartProduct } from "@/lib/utils";
 
 export default function Home() {
   const { data: products, isLoading } = useProducts();
 
-  const newItems = products?.slice(5, 8) || [];
-  const topSellers = products?.slice(0, 3) || [];
-  const featured = products?.slice(0, 5) || [];
+  const all = (products ?? []).map(toCartProduct);
+  const newItems = all.slice(5, 8);
+  const topSellers = all.slice(0, 3);
+  const featured = all.slice(0, 5);
 
   return (
     <div className="pt-16 min-h-screen flex flex-col relative">
-      {/* Background Graphics */}
       <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] animate-pulse" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-accent/5 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
         <div className="absolute top-[20%] right-[10%] w-[20%] h-[20%] bg-primary/3 rounded-full blur-[80px]" />
       </div>
 
-      {/* Hero Section */}
       <section className="relative overflow-hidden py-20 lg:py-32 bg-[url('/herobg.jpg')] bg-cover bg-center bg-no-repeat">
-        {/* Dark/semi-transparent overlay to ensure text readability */}
         <div className="absolute inset-0 bg-background/10" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -37,15 +36,15 @@ export default function Home() {
               Discover our curated collection of premium products designed to bring style and functionality to your modern lifestyle.
             </p>
             <div className="mt-10 flex flex-wrap gap-4">
-              <Link 
-                href="#collection" 
+              <Link
+                href="#collection"
                 className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-primary-foreground rounded-full font-medium hover:scale-105 hover:shadow-xl transition-all duration-300"
               >
                 Shop Collection
                 <ArrowRight size={18} />
               </Link>
-              <Link 
-                href="#new-arrivals" 
+              <Link
+                href="#new-arrivals"
                 className="inline-flex items-center gap-2 px-8 py-4 bg-background border border-border text-foreground rounded-full font-medium hover:bg-secondary transition-all duration-300"
               >
                 New Arrivals
@@ -55,7 +54,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Top Sellers Section */}
       <section className="py-16 border-y border-border/50 bg-secondary/30 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 mb-8">
@@ -77,7 +75,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Collection */}
       <section id="collection" className="py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-12">
@@ -99,7 +96,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* New Arrivals Section */}
       <section id="new-arrivals" className="py-24 bg-primary/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-12">

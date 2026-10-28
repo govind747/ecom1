@@ -1,11 +1,9 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useUser, useLogin, useRegister } from "@/hooks/use-auth";
-import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
-// Minimal forms, local state for simplicity in a visual-first pass
 export default function Auth() {
   const [, setLocation] = useLocation();
   const { data: user, isLoading: isUserLoading } = useUser();
@@ -15,9 +13,9 @@ export default function Auth() {
 
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // Redirect if already logged in
   if (user) {
     setLocation("/");
     return null;
@@ -33,33 +31,36 @@ export default function Auth() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username || !password) {
-      toast({ variant: "destructive", title: "Missing fields" });
-      return;
-    }
-
-    const payload = { username, password };
-    
     if (isLogin) {
-      login.mutate(payload, {
-        onSuccess: () => {
-          toast({ title: "Welcome back!" });
-          setLocation("/");
-        },
-        onError: (err) => {
-          toast({ variant: "destructive", title: "Error", description: err.message });
+      if (!email || !password) {
+        toast({ variant: "destructive", title: "Missing fields" });
+        return;
+      }
+      login.mutate(
+        { email, password },
+        {
+          onSuccess: () => {
+            toast({ title: "Welcome back!" });
+            setLocation("/");
+          },
+          onError: (err) => toast({ variant: "destructive", title: "Error", description: err.message }),
         }
-      });
+      );
     } else {
-      register.mutate(payload, {
-        onSuccess: () => {
-          toast({ title: "Account created successfully!" });
-          setLocation("/");
-        },
-        onError: (err) => {
-          toast({ variant: "destructive", title: "Error", description: err.message });
+      if (!username || !email || !password) {
+        toast({ variant: "destructive", title: "Missing fields" });
+        return;
+      }
+      register.mutate(
+        { email, password, username },
+        {
+          onSuccess: () => {
+            toast({ title: "Account created successfully!" });
+            setLocation("/");
+          },
+          onError: (err) => toast({ variant: "destructive", title: "Error", description: err.message }),
         }
-      });
+      );
     }
   };
 
@@ -75,7 +76,7 @@ export default function Auth() {
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
               {isLogin ? "Don't have an account? " : "Already have an account? "}
-              <button 
+              <button
                 onClick={() => setIsLogin(!isLogin)}
                 className="font-medium text-primary hover:underline"
               >
@@ -86,25 +87,36 @@ export default function Auth() {
 
           <div className="mt-10">
             <form onSubmit={handleSubmit} className="space-y-6">
+              {!isLogin && (
+                <div>
+                  <label className="block text-sm font-medium text-foreground">Username</label>
+                  <div className="mt-2">
+                    <input
+                      type="text"
+                      required
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className="block w-full rounded-xl border-border px-4 py-3 bg-secondary/50 focus:bg-background focus:ring-2 focus:ring-primary focus:border-primary transition-all sm:text-sm"
+                    />
+                  </div>
+                </div>
+              )}
+
               <div>
-                <label className="block text-sm font-medium text-foreground">
-                  Username
-                </label>
+                <label className="block text-sm font-medium text-foreground">Email</label>
                 <div className="mt-2">
                   <input
-                    type="text"
+                    type="email"
                     required
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="block w-full rounded-xl border-border px-4 py-3 bg-secondary/50 focus:bg-background focus:ring-2 focus:ring-primary focus:border-primary transition-all sm:text-sm"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground">
-                  Password
-                </label>
+                <label className="block text-sm font-medium text-foreground">Password</label>
                 <div className="mt-2">
                   <input
                     type="password"
@@ -121,19 +133,14 @@ export default function Auth() {
                 disabled={isPending}
                 className="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {isPending ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  isLogin ? "Sign in" : "Sign up"
-                )}
+                {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : isLogin ? "Sign in" : "Sign up"}
               </button>
             </form>
           </div>
         </div>
       </div>
-      
+
       <div className="hidden lg:block relative w-0 flex-1">
-        {/* minimal lifestyle shopping bags */}
         <img
           className="absolute inset-0 h-full w-full object-cover"
           src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1600&q=80"

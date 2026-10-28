@@ -1,19 +1,29 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@shared/routes";
-import { z } from "zod";
+import { supabase } from "@/lib/supabase";
+import type { Profile } from "@shared/types";
 
-type UserResponse = z.infer<typeof api.auth.me.responses[200]>;
-type LoginInput = z.infer<typeof api.auth.login.input>;
-type RegisterInput = z.infer<typeof api.auth.register.input>;
+export type AuthUser = {
+  id: string;
+  email: string;
+  username: string;
+};
 
 export function useUser() {
-  return useQuery({
-    queryKey: [api.auth.me.path],
+  return useQuery<AuthUser | null>({
+    queryKey: ["auth-user"],
     queryFn: async () => {
-      const res = await fetch(api.auth.me.path, { credentials: "include" });
-      if (res.status === 401) return null;
-      if (!res.ok) throw new Error("Failed to fetch user");
-      return api.auth.me.responses[200].parse(await res.json());
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return null;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id, username")
+        .eq("id", session.user.id)
+        .maybeSingle();
+
+      // If a profile row is missing, derive a username from email.
+      const username = profile?.username ?? session.user.email?.split("@")[0] ?? "user";
+      return { id: session.user.id, email: session.user.email ?? "", username };
     },
     retry: false,
   });
@@ -22,21 +32,13 @@ export function useUser() {
 export function useLogin() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: LoginInput) => {
-      const res = await fetch(api.auth.login.path, {
-        method: api.auth.login.method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-        credentials: "include",
-      });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || "Failed to login");
-      }
-      return api.auth.login.responses[200].parse(await res.json());
+    mutationFn: async ({ email, password }: { email: string; password: string }) => {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw new Error(error.message);
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [api.auth.me.path] });
+      queryClient.invalidateQueries({ queryKey: ["auth-user"] });
     },
   });
 }
@@ -44,21 +46,21 @@ export function useLogin() {
 export function useRegister() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: RegisterInput) => {
-      const res = await fetch(api.auth.register.path, {
-        method: api.auth.register.method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-        credentials: "include",
-      });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || "Failed to register");
-      }
-      return api.auth.register.responses[201].parse(await res.json());
+    mutationFn: async ({ email, password, username }: { email: string; password: string; username: string }) => {
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) throw new Error(error.message);
+      if (!data.user) throw new Error("Registration failed");
+
+      // Create profile row.
+      const { error: profileErr } = await supabase
+        .from("profiles")
+        .insert({ id: data.user.id, username });
+      if (profileErr) throw new Error(profileErr.message);
+
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [api.auth.me.path] });
+      queryClient.invalidateQueries({ queryKey: ["auth-user"] });
     },
   });
 }
@@ -67,15 +69,30 @@ export function useLogout() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const res = await fetch(api.auth.logout.path, {
-        method: api.auth.logout.method,
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Failed to logout");
+      await supabase.auth.signOut();
     },
     onSuccess: () => {
-      queryClient.setQueryData([api.auth.me.path], null);
+      queryClient.setQueryData(["auth-user"], null);
       queryClient.clear();
     },
   });
 }
+
+// Subscribe to auth state changes so login/logout elsewhere is reflected.
+export function useAuthStateSubscription() {
+  const queryClient = useQueryClient();
+  useQuery({
+    queryKey: ["auth-subscription"],
+    queryFn: async () => {
+      supabase.auth.onAuthStateChange((_event, _session) => {
+        (async () => {
+          queryClient.invalidateQueries({ queryKey: ["auth-user"] });
+        })();
+      });
+      return null;
+    },
+    staleTime: Infinity,
+  });
+}
+
+export type { Profile };

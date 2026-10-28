@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Trash2, CreditCard, ShoppingBag, Loader2 } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
@@ -7,9 +7,8 @@ import { useCreateOrder, useVerifyOrder } from "@/hooks/use-orders";
 import { formatPrice } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
-// Helper to inject script
 const loadRazorpayScript = () => {
-  return new Promise((resolve) => {
+  return new Promise<boolean>((resolve) => {
     if (window.Razorpay) {
       resolve(true);
       return;
@@ -30,9 +29,9 @@ export default function Cart() {
   const verifyOrder = useVerifyOrder();
   const { toast } = useToast();
 
-  const [processingId, setProcessingId] = useState<number | null>(null);
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
-  const handleCheckout = async (productId: number) => {
+  const handleCheckout = async (productId: string) => {
     if (!user) {
       toast({ title: "Authentication required", description: "Please sign in to checkout." });
       setLocation("/auth");
@@ -41,34 +40,30 @@ export default function Cart() {
 
     try {
       setProcessingId(productId);
-      
-      // 1. Create order on backend
+
       const orderData = await createOrder.mutateAsync({ productId });
-      
-      // 2. Load script
+
       const scriptLoaded = await loadRazorpayScript();
       if (!scriptLoaded) {
         throw new Error("Razorpay SDK failed to load. Are you online?");
       }
 
-      // 3. Initialize Razorpay options
-      const options = {
+      const options: RazorpayOptions = {
         key: orderData.key,
         amount: orderData.amount,
         currency: orderData.currency,
         name: "LUXE",
         description: "Test Transaction",
         order_id: orderData.razorpayOrderId,
-        handler: async function (response: any) {
+        handler: async function (response: RazorpayResponse) {
           try {
-            // 4. Verify on backend
             await verifyOrder.mutateAsync({
               orderId: orderData.orderId,
               razorpayPaymentId: response.razorpay_payment_id,
               razorpayOrderId: response.razorpay_order_id,
               razorpaySignature: response.razorpay_signature,
             });
-            
+
             toast({ title: "Payment successful!" });
             removeFromCart(productId);
             setLocation("/orders");
@@ -86,11 +81,10 @@ export default function Cart() {
 
       const paymentObject = new window.Razorpay(options);
       paymentObject.open();
-      
-      paymentObject.on('payment.failed', function (response: any){
+
+      paymentObject.on('payment.failed', function (response: any) {
         toast({ variant: "destructive", title: "Payment failed", description: response.error.description });
       });
-
     } catch (err: any) {
       toast({ variant: "destructive", title: "Checkout Error", description: err.message });
     } finally {
@@ -108,8 +102,8 @@ export default function Cart() {
             <ShoppingBag className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
             <h2 className="text-xl font-medium text-foreground mb-2">Your bag is empty</h2>
             <p className="text-muted-foreground mb-6">Looks like you haven't added anything yet.</p>
-            <Link 
-              href="/" 
+            <Link
+              href="/"
               className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-sm font-medium rounded-full shadow-sm text-primary-foreground bg-primary hover:bg-primary/90 transition-colors"
             >
               Continue Shopping
@@ -118,8 +112,8 @@ export default function Cart() {
         ) : (
           <div className="space-y-6">
             {items.map((item) => (
-              <div 
-                key={item.id} 
+              <div
+                key={item.id}
                 className="flex flex-col sm:flex-row items-center gap-6 p-6 bg-card rounded-2xl border border-border shadow-sm"
               >
                 <div className="w-full sm:w-32 aspect-square rounded-xl overflow-hidden bg-secondary flex-shrink-0">
@@ -129,7 +123,7 @@ export default function Cart() {
                     className="w-full h-full object-cover mix-blend-multiply"
                   />
                 </div>
-                
+
                 <div className="flex-1 w-full text-center sm:text-left">
                   <h3 className="text-lg font-medium text-foreground">{item.name}</h3>
                   <p className="mt-1 text-sm text-muted-foreground line-clamp-1">{item.description}</p>

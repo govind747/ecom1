@@ -1,11 +1,11 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { type Product } from "@shared/schema";
+import { type CartProduct } from "@shared/types";
 
 interface CartState {
-  items: Product[];
-  addToCart: (product: Product) => void;
-  removeFromCart: (productId: number) => void;
+  items: CartProduct[];
+  addToCart: (product: CartProduct) => void;
+  removeFromCart: (productId: string) => void;
   clearCart: () => void;
 }
 
@@ -13,9 +13,8 @@ export const useCart = create<CartState>()(
   persist(
     (set) => ({
       items: [],
-      addToCart: (product) => 
+      addToCart: (product) =>
         set((state) => ({
-          // Only add if not already in cart
           items: state.items.some((item) => item.id === product.id)
             ? state.items
             : [...state.items, product],
